@@ -4,9 +4,11 @@ import hmac
 import json
 import time
 import urllib
-import websocket
 from threading import Event, Thread
+
+import websocket
 from channels.generic.websocket import WebsocketConsumer
+
 from bitmex_api.models import Account
 
 BITMEX_URL = "wss://testnet.bitmex_api.com"
@@ -53,6 +55,8 @@ class BitmexConsumer(WebsocketConsumer):
                         'symbol': data[0]['symbol'],
                         'price': price
                     }
+
+                    print(message)
                     self.send(text_data=json.dumps(message))
 
             except json.decoder.JSONDecodeError:
@@ -66,13 +70,14 @@ class BitmexConsumer(WebsocketConsumer):
         try:
             account_name = self.scope['url_route']['kwargs']['uri']
             self.account = Account.objects.get(name=account_name)
+            print('Connected to WS')
         except Account.DoesNotExist as e:
             print("Such account doesn't exist")
         else:
             self.accept()
 
     def disconnect(self, close_code):
-        print('Disconnected')
+        print('Disconnected from WS')
 
         self.event.clear()
         self.ws_client.close()
