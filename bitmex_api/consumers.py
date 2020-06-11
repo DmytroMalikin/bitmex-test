@@ -11,7 +11,7 @@ from channels.generic.websocket import WebsocketConsumer
 
 from bitmex_api.models import Account
 
-BITMEX_URL = "wss://testnet.bitmex_api.com"
+BITMEX_URL = "wss://testnet.bitmex.com"
 ENDPOINT = "/realtime"
 METHOD = "GET"
 
@@ -45,18 +45,23 @@ class BitmexConsumer(WebsocketConsumer):
             try:
                 message = self.ws_client.recv()
                 proxy_data = json.loads(message)
+                print(proxy_data)
+
                 data = proxy_data.get('data')
 
                 if proxy_data and data:
-                    price = data[0].get('markPrice', None)
+                    print(data)
+                    price = data[0].get('lastPrice', None)
                     message = {
-                        'timestamp': data[0]['timestamp'],
-                        'account': self.account.name,
-                        'symbol': data[0]['symbol'],
-                        'price': price
+                        'action': 'update',
+                        'message': {
+                            'timestamp': data[0]['timestamp'],
+                            'account': self.account.name,
+                            'symbol': data[0]['symbol'],
+                            'price': price
+                        }
                     }
 
-                    print(message)
                     self.send(text_data=json.dumps(message))
 
             except json.decoder.JSONDecodeError:
@@ -65,6 +70,9 @@ class BitmexConsumer(WebsocketConsumer):
             except OSError as e:
                 if e.errno == errno.EBADF:
                     pass
+
+            except Exception:
+                pass
 
     def connect(self):
         try:
@@ -83,8 +91,8 @@ class BitmexConsumer(WebsocketConsumer):
         self.ws_client.close()
 
     def receive(self, text_data, **kwargs):
+        print(text_data)
         data = json.loads(text_data)
-        print(data)
 
         if data['action'] == 'subscribe':
             expires = int(time.time()) + 5

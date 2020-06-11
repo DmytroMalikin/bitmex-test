@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<title>WebSocket Test</title>
+<script language="javascript" type="text/javascript">
+
+    let wsUri = "ws://localhost:8888/ws/bitmex_api/test/";
+    let output, info;
+    let p_account, p_timestamp, p_symbol, p_price;
+    let account;
+
+    function init() {
+        output = document.getElementById("output");
+        info = document.getElementById("info");
+
+        p_account = document.getElementById("account");
+        p_timestamp = document.getElementById("timestamp");
+        p_symbol = document.getElementById("symbol");
+        p_price = document.getElementById("price");
+    }
+
+    function initWsConnection() {
+        account = document.getElementById('account_input').value;
+        console.log(account);
+        testWebSocket();
+    }
+
+    function testWebSocket() {
+        websocket = new WebSocket(wsUri);
+        websocket.onopen = function (evt) {
+            onOpen(evt)
+        };
+        websocket.onclose = function (evt) {
+            onClose(evt)
+        };
+        websocket.onmessage = function (evt) {
+            onMessage(evt)
+        };
+        websocket.onerror = function (evt) {
+            onError(evt)
+        };
+    }
+
+    function onOpen(evt) {
+        writeToScreen("CONNECTED");
+        doSend("Connected to WS");
+    }
+
+    function onClose(evt) {
+        writeToScreen("DISCONNECTED. Retrying to connect");
+        doSend("Connected to WS");
+    }
+
+    function onMessage(evt) {
+        let data = JSON.parse(evt.data);
+        console.log(data);
+        if (data.action === 'update') {
+            p_account.innerHTML = data.message.account || '-';
+            p_price.innerHTML = data.message.price || '-';
+            p_symbol.innerHTML = data.message.symbol || '-';
+            p_timestamp.innerHTML = data.message.timestamp || '-';
+        }
+    }
+
+    function onError(evt) {
+        console.log(evt.data);
+        writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data || '-');
+    }
+
+    function doSend(message) {
+        writeToScreen(message);
+        websocket.send(JSON.stringify({action: 'subscribe', account: account}));
+    }
+
+    function writeToScreen(message) {
+        info.innerHTML = message;
+    }
+
+    window.addEventListener("load", init, false);
+
+</script>
+
+<h2>WebSocket Test</h2>
+<p>Enter your account name</p>
+<input id="account_input" type="text"/>
+<button id="account_submit" onclick="initWsConnection()">Submit</button>
+<br/>
+<p>INFO</p>
+<div id="info">
+</div>
+<div id="output">
+    <p>Account: </p>
+    <p id="account">-</p>
+    <hr/>
+    <p>Symbol: </p>
+    <p id="symbol">-</p>
+    <hr/>
+    <p>Price: </p>
+    <p id="price">-</p>
+    <hr/>
+    <p>Timestamp: </p>
+    <p id="timestamp">-</p>
+</div>
